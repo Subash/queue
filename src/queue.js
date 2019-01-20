@@ -57,14 +57,9 @@ class Queue {
 
       Promise.resolve()
         .then(task)
-        .then((result)=> {
-          clearTimeout(timer);
-          resolve(result);
-        })
-        .catch((err)=> {
-          clearTimeout(timer);
-          reject(err);
-        });
+        .then(resolve)
+        .catch(reject)
+        .finally(()=> clearTimeout(timer));
     });
   }
 
