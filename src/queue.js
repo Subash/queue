@@ -97,6 +97,7 @@ class Queue {
 
   clear() {
     this.tasks = [];
+    this.emitter.emit('did-clear');
   }
 
   get size() {
@@ -131,6 +132,10 @@ class Queue {
     return this.emitter.on('did-resume', callback);
   }
 
+  onDidClear(callback) {
+    return this.emitter.on('did-clear', callback);
+  }
+
   onDidFinish(callback) {
     return this.emitter.on('did-finish', callback);
   }
@@ -142,7 +147,7 @@ class Queue {
   destroy() {
     this.emitter.emit('will-destroy');
     this.destroyed = true;
-    this.clear();
+    this.tasks = [];
     this.emitter.dispose();
   }
 }

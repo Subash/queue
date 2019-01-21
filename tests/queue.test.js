@@ -43,13 +43,13 @@ test('Test _runWithTimeout() error', (done)=> {
 test('Test clear()', (done)=> {
   const queue = new Queue();
   const task = jest.fn();
-  queue.onDidRun(()=> queue.clear()); //Clear after first run
-  queue.add(task, task, task, task, task);
-  queue.onDidFinish(()=> {
+  queue.onDidClear(()=> {
     expect(task).toHaveBeenCalledTimes(1);
     queue.destroy();
     done();
   });
+  queue.onDidRun(()=> queue.clear()); //Clear after first run
+  queue.add(task, task, task, task, task);
 });
 
 test('Test onDidAdd() error', ()=> {
