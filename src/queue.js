@@ -8,8 +8,8 @@ class Queue {
     this.automatic = automatic;
     this.concurrency = concurrency;
     this.timeout = timeout;
-    this.runningCount = 0;
     this.tasks = [];
+    this.runningTasks = [];
   }
 
   _add(task) {
@@ -34,14 +34,17 @@ class Queue {
 
   next() {
     if(this.paused || this.destroyed) return;
-    if(this.runningCount >= this.concurrency) return;
+    if(this.runningTasks.length >= this.concurrency) return;
 
     //Fire finish event if there are no tasks left
     if(!this.tasks.length) return this.emitter.emit('did-finish');
 
-    //Get a task from queue then run it
+    //Get the next task then add that to running tasks list
+    const nextTask = this.tasks.shift();
+    this.runningTasks.push(nextTask);
+
     //this.runTask never rejects
-    this.runTask(this.tasks.shift()).then(()=> this.next());
+    this.runTask(nextTask);
 
     //Call next to run multiple tasks concurrently
     this.next();
@@ -64,26 +67,42 @@ class Queue {
   }
 
   async runTask(task) {
+    let result, error;
+    this.emitter.emit('will-run', task);
+
     try {
-      this.runningCount++;
-      this.emitter.emit('will-run', task);
-      const result = await (this.timeout? this._runWithTimeout(task): task());
-      this.emitter.emit('did-run', { task , result });
-    } catch (error) {
-      this.emitter.emit('did-fail', { task, error });
-    } finally {
-      this.runningCount--;
+      result = await (this.timeout? this._runWithTimeout(task): task());
+    } catch(err) {
+      error = err;
     }
+
+    //Ignore task if the queue has been cleared
+    if(!this.runningTasks.includes(task)) return;
+
+    //Remove task from running task list
+    this.runningTasks.splice(this.runningTasks.indexOf(task), 1);
+
+    //Notify failure or success
+    if(error) {
+      this.emitter.emit('did-fail', { task, error });
+    } else {
+      this.emitter.emit('did-run', { task , result });
+    }
+
+    //Run next task
+    this.next();
   }
 
   pause() {
+    if(this.paused) return; //Do not fire event if already paused
     this.paused = true;
     this.emitter.emit('did-pause');
   }
 
   resume() {
-    this.paused = false;
     this.next();
+    if(!this.paused) return; //Do not fire event if not paused
+    this.paused = false;
     this.emitter.emit('did-resume');
   }
 
@@ -97,11 +116,12 @@ class Queue {
 
   clear() {
     this.tasks = [];
+    this.runningTasks = [];
     this.emitter.emit('did-clear');
   }
 
   get size() {
-    return this.tasks.length + this.runningCount;
+    return this.tasks.length + this.runningTasks.length;
   }
 
   onDidAdd(callback) {
@@ -148,6 +168,7 @@ class Queue {
     this.emitter.emit('will-destroy');
     this.destroyed = true;
     this.tasks = [];
+    this.runningTasks = [];
     this.emitter.dispose();
   }
 }

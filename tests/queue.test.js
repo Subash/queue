@@ -77,6 +77,7 @@ test('Test pause() and onDidPause()', (done)=> {
   const queue = new Queue();
   queue.onDidPause(()=> done());
   queue.pause();
+  queue.pause(); //Should to nothing
   expect(queue.isPaused()).toBe(true);
   queue.destroy();
 });
@@ -85,6 +86,7 @@ test('Test resume() and onDidResume()', (done)=> {
   const queue = new Queue();
   queue.onDidResume(()=> done());
   queue.pause();
+  queue.resume(); //Should to nothing
   queue.start(); //Start is just an alias for resume()
   queue.destroy();
 });
