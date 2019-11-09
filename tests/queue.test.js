@@ -1,4 +1,4 @@
-const Queue = require('../src/queue');
+const Queue = require('../');
 
 test('Test onWillDestroy()', (done)=> {
   const queue = new Queue();

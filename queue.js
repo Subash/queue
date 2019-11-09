@@ -22,7 +22,7 @@ class Queue {
     tasks.forEach( task=> this._add(task));
     if(!this.automatic) return;
 
-    //Run on the next tick to allow consumers to set observers after adding tasks
+    // run on the next tick to allow consumers to set observers after adding tasks
     process.nextTick(this.next.bind(this));
   }
 
@@ -36,17 +36,17 @@ class Queue {
     if(this.paused || this.destroyed) return;
     if(this.runningTasks.length >= this.concurrency) return;
 
-    //Fire finish event if there are no tasks left
+    // fire finish event if there are no tasks left
     if(!this.tasks.length) return this.emitter.emit('did-finish');
 
-    //Get the next task then add that to running tasks list
+    // get the next task then add that to running tasks list
     const nextTask = this.tasks.shift();
     this.runningTasks.push(nextTask);
 
-    //this.runTask never rejects
+    // this.runTask never rejects
     this.runTask(nextTask);
 
-    //Call next to run multiple tasks concurrently
+    // call next to run multiple tasks concurrently
     this.next();
   }
 
@@ -76,32 +76,32 @@ class Queue {
       error = err;
     }
 
-    //Ignore task if the queue has been cleared
+    // ignore task if the queue has been cleared
     if(!this.runningTasks.includes(task)) return;
 
-    //Remove task from running task list
+    // remove task from running task list
     this.runningTasks.splice(this.runningTasks.indexOf(task), 1);
 
-    //Notify failure or success
+    // notify failure or success
     if(error) {
       this.emitter.emit('did-fail', { task, error });
     } else {
       this.emitter.emit('did-run', { task , result });
     }
 
-    //Run next task
+    // run next task
     this.next();
   }
 
   pause() {
-    if(this.paused) return; //Do not fire event if already paused
+    if(this.paused) return; // do not fire event if already paused
     this.paused = true;
     this.emitter.emit('did-pause');
   }
 
   resume() {
     this.next();
-    if(!this.paused) return; //Do not fire event if not paused
+    if(!this.paused) return; // do not fire event if not paused
     this.paused = false;
     this.emitter.emit('did-resume');
   }
